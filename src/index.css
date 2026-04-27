@@ -1,0 +1,282 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════
+   TireGuard Design System — Dual Theme
+   ═══════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    /* Light Theme */
+    --tg-bg: #F8FAFC;
+    --tg-bg-rgb: 248, 250, 252;
+    --tg-card: #FFFFFF;
+    --tg-card-rgb: 255, 255, 255;
+    --tg-card-border: rgba(0, 240, 255, 0.15);
+    --tg-card-blur: 0px;
+
+    --tg-text-primary: #0F172A;
+    --tg-text-secondary: #475569;
+    --tg-text-muted: #94A3B8;
+
+    --tg-accent: #0D9488;
+    --tg-accent-rgb: 13, 148, 136;
+    --tg-critical: #DC2626;
+    --tg-critical-rgb: 220, 38, 38;
+    --tg-warning: #D97706;
+    --tg-warning-rgb: 217, 119, 6;
+    --tg-safe: #059669;
+    --tg-safe-rgb: 5, 150, 105;
+    --tg-info: #1E40AF;
+    --tg-info-rgb: 30, 64, 175;
+
+    --tg-border: rgba(15, 23, 42, 0.1);
+    --tg-border-strong: rgba(15, 23, 42, 0.2);
+
+    --tg-glow-accent: rgba(13, 148, 136, 0.15);
+    --tg-glow-critical: rgba(220, 38, 38, 0.1);
+
+    --tg-sidebar-bg: #FFFFFF;
+    --tg-navbar-bg: rgba(255, 255, 255, 0.85);
+    --tg-hover-bg: rgba(15, 23, 42, 0.04);
+    --tg-active-bg: rgba(13, 148, 136, 0.08);
+    --tg-active-border: rgba(13, 148, 136, 0.5);
+
+    --tg-chart-grid: rgba(15, 23, 42, 0.06);
+    --tg-chart-tick: #64748B;
+
+    /* Shadcn compatibility */
+    --background: 210 40% 98%;
+    --foreground: 222 84% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 84% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 84% 5%;
+    --primary: 174 83% 32%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 174 83% 32%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Dark Theme (default) */
+    --tg-bg: #050505;
+    --tg-bg-rgb: 5, 5, 5;
+    --tg-card: rgba(255, 255, 255, 0.04);
+    --tg-card-rgb: 255, 255, 255;
+    --tg-card-border: rgba(255, 255, 255, 0.08);
+    --tg-card-blur: 16px;
+
+    --tg-text-primary: #E2E8F0;
+    --tg-text-secondary: #94A3B8;
+    --tg-text-muted: #64748B;
+
+    --tg-accent: #00F5FF;
+    --tg-accent-rgb: 0, 245, 255;
+    --tg-critical: #FF0055;
+    --tg-critical-rgb: 255, 0, 85;
+    --tg-warning: #F0AB00;
+    --tg-warning-rgb: 240, 171, 0;
+    --tg-safe: #00F5FF;
+    --tg-safe-rgb: 0, 245, 255;
+    --tg-info: #00F5FF;
+    --tg-info-rgb: 0, 245, 255;
+
+    --tg-border: rgba(255, 255, 255, 0.08);
+    --tg-border-strong: rgba(255, 255, 255, 0.15);
+
+    --tg-glow-accent: rgba(0, 245, 255, 0.15);
+    --tg-glow-critical: rgba(255, 0, 85, 0.15);
+
+    --tg-sidebar-bg: rgba(10, 10, 10, 0.95);
+    --tg-navbar-bg: rgba(10, 10, 10, 0.85);
+    --tg-hover-bg: rgba(255, 255, 255, 0.04);
+    --tg-active-bg: rgba(0, 245, 255, 0.08);
+    --tg-active-border: rgba(0, 245, 255, 0.5);
+
+    --tg-chart-grid: rgba(255, 255, 255, 0.06);
+    --tg-chart-tick: #64748B;
+
+    /* Shadcn compatibility */
+    --background: 0 0% 2%;
+    --foreground: 214 32% 91%;
+    --card: 0 0% 4%;
+    --card-foreground: 214 32% 91%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 214 32% 91%;
+    --primary: 184 100% 50%;
+    --primary-foreground: 0 0% 2%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 340 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 12%;
+    --input: 217 33% 12%;
+    --ring: 184 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--tg-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--tg-bg);
+    color: var(--tg-text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Typography */
+  h1, h2, h3 {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+
+  .font-display { font-family: 'Orbitron', sans-serif; }
+  .font-mono-data { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  .font-body { font-family: 'Inter', system-ui, sans-serif; }
+}
+
+/* ═══ Scrollbar ═══ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--tg-border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--tg-text-muted); }
+
+/* ═══ Glassmorphism Card ═══ */
+.glass-card {
+  background: var(--tg-card);
+  backdrop-filter: blur(var(--tg-card-blur));
+  -webkit-backdrop-filter: blur(var(--tg-card-blur));
+  border: 1px solid var(--tg-card-border);
+  border-radius: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--tg-border-strong);
+}
+
+/* ═══ Tech Border (animated gradient edge) ═══ */
+.tech-border {
+  position: relative;
+  overflow: hidden;
+}
+.tech-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--tg-accent) 0%,
+    transparent 40%,
+    transparent 60%,
+    var(--tg-accent) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.tech-border:hover::before {
+  opacity: 1;
+  animation: tech-border-spin 3s linear infinite;
+}
+
+@keyframes tech-border-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══ Scan Line Hover Effect ═══ */
+.scan-hover {
+  position: relative;
+  overflow: hidden;
+}
+.scan-hover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(var(--tg-accent-rgb), 0.06) 50%,
+    transparent 100%
+  );
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+.scan-hover:hover::after {
+  left: 100%;
+}
+
+/* ═══ Glow Effects ═══ */
+.glow-accent { box-shadow: 0 0 20px rgba(var(--tg-accent-rgb), 0.15); }
+.glow-critical { box-shadow: 0 0 20px rgba(var(--tg-critical-rgb), 0.15); }
+.glow-warning { box-shadow: 0 0 20px rgba(var(--tg-warning-rgb), 0.15); }
+
+/* ═══ Pulse Radar Animation ═══ */
+@keyframes pulse-radar {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.pulse-radar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--tg-critical);
+  animation: pulse-radar 1.5s ease-out infinite;
+}
+
+/* ═══ Glitch Effect ═══ */
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -1px); }
+  60% { transform: translate(-1px, -1px); }
+  80% { transform: translate(1px, 2px); }
+}
+.glitch-text {
+  animation: glitch 0.3s ease-in-out infinite;
+}
+
+/* ═══ Reduced Motion ═══ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .scan-hover::after { display: none; }
+  .tech-border::before { display: none; }
+}
