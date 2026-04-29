@@ -23,7 +23,6 @@ export default function TireScene({
 }: TireSceneProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-
   const hasWebGL = typeof window !== 'undefined' && !!window.WebGLRenderingContext
 
   return (
@@ -33,33 +32,51 @@ export default function TireScene({
         position: 'relative',
         width: '100%',
         height: '100%',
-        background: isDark && hasWebGL
-          ? 'radial-gradient(ellipse at center, rgba(0,245,255,0.04) 0%, transparent 70%)'
-          : 'transparent',
+        background: isDark
+          ? 'radial-gradient(ellipse at center, rgba(168,85,247,0.06) 0%, rgba(0,245,255,0.03) 40%, transparent 70%)'
+          : 'radial-gradient(ellipse at center, rgba(99,102,241,0.05) 0%, transparent 65%)',
       }}
     >
       {hasWebGL ? (
         <Canvas
-          camera={{ position: [0, 0, 4], fov: 45 }}
+          // Angled camera — shows the torus as a 3-D shape, not a flat circle
+          camera={{ position: [3.5, 2.2, 3.5], fov: 42 }}
           gl={{ antialias: true }}
           shadows={false}
         >
           <TireModel />
-          <ambientLight intensity={isDark ? 0.15 : 0.35} />
-          <pointLight position={[3, 2, 3]} intensity={isDark ? 2 : 0.8} />
+
+          {/* Ambient — brighter in light mode so wireframes read on white */}
+          <ambientLight intensity={isDark ? 0.4 : 0.8} />
+
+          {/* Key light */}
           <pointLight
-            position={[-5, 2, -3]}
-            color={isDark ? '#4d4dff' : '#ffffff'}
-            intensity={isDark ? 1.5 : 0.3}
+            position={[4, 3, 4]}
+            intensity={isDark ? 1.2 : 0.6}
+            color={isDark ? '#ffffff' : '#f0f4ff'}
           />
+
+          {/* Rim accent: purple in dark, indigo in light */}
+          <pointLight
+            position={[-4, 2, -3]}
+            color={isDark ? '#a855f7' : '#6366f1'}
+            intensity={isDark ? 1.8 : 0.5}
+          />
+
+          {/* Tread accent: cyan */}
+          <pointLight
+            position={[0, -3, 2]}
+            color={isDark ? '#06b6d4' : '#0ea5e9'}
+            intensity={isDark ? 1.0 : 0.3}
+          />
+
           <OrbitControls
             enablePan={enablePan}
             enableZoom={enableZoom}
             enableDamping
             dampingFactor={0.05}
             rotateSpeed={0.5}
-            autoRotate
-            autoRotateSpeed={0.6}
+            // No autoRotate here — TireModel drives its own rotation in useFrame
           />
         </Canvas>
       ) : (
