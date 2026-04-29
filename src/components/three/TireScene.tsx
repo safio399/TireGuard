@@ -1,9 +1,10 @@
-import { Suspense, lazy, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls } from '@react-three/drei'
 import { useTheme } from '../../context/ThemeContext'
 import type { Tire } from '../../types'
 import type { PredictionStatus } from '../../types/prediction'
-
-const TireCanvas = lazy(() => import('./TireCanvas'))
+import TireModel from './TireModel'
 
 interface TireSceneProps {
   tire?: Tire | null
@@ -16,92 +17,66 @@ interface TireSceneProps {
 }
 
 export default function TireScene({
-  tire,
   className = '',
-  showControls = true,
-  predictionStatus,
-  enableZoom = true,
+  enableZoom = false,
   enablePan = false,
-  autoRotate = true,
 }: TireSceneProps) {
-  const { theme, prefersReducedMotion } = useTheme()
-  const [isXray, setIsXray] = useState(false)
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
 
-  return (
-    <div className={`relative ${className}`}>
-      <Suspense fallback={<TireSceneSkeleton />}>
-        <TireCanvas
-          tire={tire}
-          theme={theme}
-          isXray={isXray}
-          predictionStatus={predictionStatus}
-          enableZoom={enableZoom}
-          enablePan={enablePan}
-          autoRotate={autoRotate}
-          prefersReducedMotion={prefersReducedMotion}
-        />
-      </Suspense>
+  const hasWebGL = typeof window !== 'undefined' && !!window.WebGLRenderingContext
 
-      {showControls && (
-        <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-          <button
-            onClick={() => setIsXray(!isXray)}
-            className="rounded-lg px-3 py-1.5 text-[11px] font-mono-data transition-all duration-200"
-            style={{
-              background: isXray ? 'rgba(var(--tg-accent-rgb), 0.2)' : 'var(--tg-hover-bg)',
-              color: isXray ? 'var(--tg-accent)' : 'var(--tg-text-secondary)',
-              border: `1px solid ${isXray ? 'var(--tg-accent)' : 'var(--tg-border)'}`,
-            }}
-          >
-            {isXray ? 'X-RAY ON' : 'X-RAY'}
-          </button>
-        </div>
-      )}
-
-      {tire && (
-        <div className="absolute right-4 top-4 z-10 space-y-2">
-          <DataLabel label="PSI" value={tire.sensor.pressure.toFixed(1)} level={tire.level} />
-          <DataLabel label="F" value={tire.sensor.temperature.toFixed(0)} level={tire.level} />
-          <DataLabel label="mm" value={tire.sensor.treadDepth.toFixed(1)} level={tire.level} />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function DataLabel({ label, value, level }: { label: string; value: string; level: string }) {
-  const isAlert = level === 'critical' || level === 'elevated'
   return (
     <div
-      className="flex items-baseline gap-1.5 rounded-md px-2 py-1 backdrop-blur-sm"
+      className={className}
       style={{
-        background: 'rgba(var(--tg-bg-rgb), 0.6)',
-        border: `1px solid ${isAlert ? 'rgba(var(--tg-critical-rgb), 0.3)' : 'var(--tg-border)'}`,
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        background: isDark && hasWebGL
+          ? 'radial-gradient(ellipse at center, rgba(0,245,255,0.04) 0%, transparent 70%)'
+          : 'transparent',
       }}
     >
-      <span className="font-mono-data text-sm font-medium" style={{ color: isAlert ? 'var(--tg-critical)' : 'var(--tg-accent)' }}>
-        {value}
-      </span>
-      <span className="text-[10px]" style={{ color: 'var(--tg-text-muted)' }}>
-        {label}
-      </span>
-    </div>
-  )
-}
-
-function TireSceneSkeleton() {
-  return (
-    <div className="flex h-full w-full items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <svg width="120" height="120" viewBox="0 0 120 120" className="animate-pulse">
-          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--tg-border)" strokeWidth="2" strokeDasharray="8 4" />
-          <circle cx="60" cy="60" r="35" fill="none" stroke="var(--tg-border)" strokeWidth="1.5" />
-          <circle cx="60" cy="60" r="15" fill="none" stroke="var(--tg-border)" strokeWidth="1" />
-        </svg>
-        <span className="text-[10px] font-mono-data" style={{ color: 'var(--tg-text-muted)' }}>
-          Loading 3D model...
-        </span>
-      </div>
+      {hasWebGL ? (
+        <Canvas
+          camera={{ position: [0, 0, 4], fov: 45 }}
+          gl={{ antialias: true }}
+          shadows={false}
+        >
+          <TireModel />
+          <ambientLight intensity={isDark ? 0.15 : 0.35} />
+          <pointLight position={[3, 2, 3]} intensity={isDark ? 2 : 0.8} />
+          <pointLight
+            position={[-5, 2, -3]}
+            color={isDark ? '#4d4dff' : '#ffffff'}
+            intensity={isDark ? 1.5 : 0.3}
+          />
+          <OrbitControls
+            enablePan={enablePan}
+            enableZoom={enableZoom}
+            enableDamping
+            dampingFactor={0.05}
+            rotateSpeed={0.5}
+            autoRotate
+            autoRotateSpeed={0.6}
+          />
+        </Canvas>
+      ) : (
+        <div className="flex h-full items-center justify-center">
+          <div
+            className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+            style={{
+              borderColor: 'rgba(var(--tg-warning-rgb), 0.35)',
+              background: 'rgba(var(--tg-warning-rgb), 0.08)',
+              color: 'var(--tg-warning)',
+            }}
+          >
+            <AlertTriangle className="h-4 w-4" />
+            WebGL not supported
+          </div>
+        </div>
+      )}
     </div>
   )
 }

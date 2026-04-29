@@ -2,6 +2,8 @@ import { Search, Bell, Sun, Moon, Menu, Radio } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 import { useTireData } from '../../context/DataContext'
 import { motion, AnimatePresence } from 'framer-motion'
+import darkLogo from '../../assets/dark.png'
+import whiteLogo from '../../assets/white.png'
 
 interface NavbarProps {
   onMenuToggle?: () => void
@@ -13,6 +15,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
 
   const criticalCount = data.alerts.filter(a => a.severity === 'critical' && !a.acknowledged).length
   const timeSinceSync = Math.round((Date.now() - lastSync.getTime()) / 1000)
+  const logoSrc = theme === 'dark' ? darkLogo : whiteLogo
 
   return (
     <header
@@ -37,10 +40,10 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
       {/* Logo */}
       <div className="flex items-center gap-2.5">
         <img
-          src="/tireguard-logo.svg"
+          src={logoSrc}
           alt="TireGuard"
-          height={28}
-          style={{ height: 28, width: 'auto' }}
+          height={34}
+          style={{ height: 34, width: 'auto' }}
           className="shrink-0"
         />
         <span className="font-display text-sm font-semibold tracking-wider hidden sm:inline"

@@ -1,131 +1,238 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Radio } from 'lucide-react'
 import { useTireData } from '../context/DataContext'
 import DashboardCard from '../components/dashboard/DashboardCard'
-import { Radio } from 'lucide-react'
+
+interface PredictionDataset {
+  machines: MachinePrediction[]
+}
+
+interface MachinePrediction {
+  id: string
+  udi: number
+  type: 'L' | 'M' | 'H'
+  airTemp: number
+  processTemp: number
+  rpm: number
+  torque: number
+  toolWear: number
+  actualFailure: 0 | 1
+  predictedProb: number
+  predictedFailure: 0 | 1
+  failureType: string | null
+}
 
 interface LogEntry {
   id: number
   timestamp: string
-  vehicle: string
-  tire: string
-  metric: string
-  value: string
+  machine: string
+  profile: string
+  failureType: string
+  probability: string
   status: 'normal' | 'warning' | 'critical'
 }
 
+const INITIAL_ROWS = 18
+
 export default function LiveFeed() {
-  const { data, syncStatus } = useTireData()
-
+  const { syncStatus } = useTireData()
+  const [machines, setMachines] = useState<MachinePrediction[]>([])
   const [logs, setLogs] = useState<LogEntry[]>([])
-  const logIdRef = useRef(0)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const cursorRef = useRef(0)
 
-  // Generate live feed entries
   useEffect(() => {
-    const generateEntry = (): LogEntry => {
-      const v = data.fleet[Math.floor(Math.random() * data.fleet.length)]
-      const t = v.tires[Math.floor(Math.random() * v.tires.length)]
-      const metrics = [
-        { metric: 'pressure', value: `${t.sensor.pressure.toFixed(1)} PSI`, status: t.sensor.pressure < 27 ? 'critical' as const : t.sensor.pressure < 30 ? 'warning' as const : 'normal' as const },
-        { metric: 'temperature', value: `${t.sensor.temperature.toFixed(0)}°F`, status: t.sensor.temperature > 85 ? 'critical' as const : t.sensor.temperature > 78 ? 'warning' as const : 'normal' as const },
-        { metric: 'tread_depth', value: `${t.sensor.treadDepth.toFixed(1)} mm`, status: t.sensor.treadDepth < 3 ? 'critical' as const : t.sensor.treadDepth < 5 ? 'warning' as const : 'normal' as const },
-      ]
-      const m = metrics[Math.floor(Math.random() * metrics.length)]
-      return {
-        id: ++logIdRef.current,
-        timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 1 }),
-        vehicle: v.name,
-        tire: t.label,
-        ...m,
+    let isMounted = true
+
+    const loadPredictions = async () => {
+      try {
+        const response = await fetch('/data/predictions.json')
+        if (!response.ok) {
+          throw new Error(`Failed to load predictions.json (${response.status})`)
+        }
+
+        const payload = await response.json() as PredictionDataset
+        if (!isMounted) return
+
+        setMachines(payload.machines)
+
+        const initialLogs = payload.machines.slice(0, INITIAL_ROWS).map((machine, index) => {
+          const offset = payload.machines.length - index
+          return toLogEntry(machine, offset)
+        })
+        cursorRef.current = payload.machines.length > 0 ? INITIAL_ROWS % payload.machines.length : 0
+        setLogs(initialLogs)
+      } catch {
+        if (!isMounted) return
+        setLoadError('Unable to load prediction feed from public/data/predictions.json.')
       }
     }
 
-    // Initial batch
-    const initial: LogEntry[] = []
-    for (let i = 0; i < 15; i++) initial.push(generateEntry())
-    setLogs(initial)
+    loadPredictions()
 
-    // Add new entries periodically
-    const interval = setInterval(() => {
-      setLogs(prev => [generateEntry(), ...prev].slice(0, 100))
-    }, 1500 + Math.random() * 2000)
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
-    return () => clearInterval(interval)
-  }, [data])
+  useEffect(() => {
+    if (machines.length === 0) return
+
+    const interval = window.setInterval(() => {
+      const machine = machines[cursorRef.current]
+      cursorRef.current = (cursorRef.current + 1) % machines.length
+
+      setLogs((current) => [toLogEntry(machine), ...current].slice(0, 120))
+    }, 1600)
+
+    return () => window.clearInterval(interval)
+  }, [machines])
+
+  const summary = useMemo(() => {
+    const critical = logs.filter((log) => log.status === 'critical').length
+    const warning = logs.filter((log) => log.status === 'warning').length
+    return { critical, warning, total: logs.length }
+  }, [logs])
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
-        <h1 className="text-xl font-display font-semibold tracking-wider"
-            style={{ color: 'var(--tg-text-primary)' }}>
-          LIVE FEED
-        </h1>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Radio className="h-3.5 w-3.5" style={{
-              color: syncStatus === 'live' ? 'var(--tg-safe)' : 'var(--tg-warning)'
-            }} />
-            {syncStatus === 'live' && (
-              <div className="absolute -inset-1 rounded-full animate-ping"
-                   style={{ background: 'var(--tg-safe)', opacity: 0.2 }} />
-            )}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+          <h1 className="text-xl font-display font-semibold tracking-wider" style={{ color: 'var(--tg-text-primary)' }}>
+            LIVE FEED
+          </h1>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Radio className="h-3.5 w-3.5" style={{ color: syncStatus === 'live' ? 'var(--tg-safe)' : 'var(--tg-warning)' }} />
+              {syncStatus === 'live' && (
+                <div className="absolute -inset-1 rounded-full animate-ping" style={{ background: 'var(--tg-safe)', opacity: 0.2 }} />
+              )}
+            </div>
+            <span className="text-xs font-mono-data" style={{ color: 'var(--tg-text-muted)' }}>
+              {syncStatus === 'live' ? 'Streaming prediction records...' : syncStatus === 'syncing' ? 'Reconnecting...' : 'Offline'}
+            </span>
           </div>
-          <span className="text-xs font-mono-data" style={{ color: 'var(--tg-text-muted)' }}>
-            {syncStatus === 'live' ? 'Streaming sensor data...' : syncStatus === 'syncing' ? 'Reconnecting...' : 'Offline'}
-          </span>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <FeedStat label="Records" value={String(summary.total)} tone="neutral" />
+          <FeedStat label="Warning" value={String(summary.warning)} tone="warning" />
+          <FeedStat label="Critical" value={String(summary.critical)} tone="critical" />
         </div>
       </div>
 
       <DashboardCard delay={0}>
-        <div ref={containerRef} className="space-y-0.5 max-h-[600px] overflow-y-auto font-mono-data text-xs">
-          {/* Header row */}
-          <div className="flex gap-3 py-2 sticky top-0 z-10"
-               style={{
-                 background: 'var(--tg-card)',
-                 borderBottom: '1px solid var(--tg-border)',
-               }}>
-            <span className="w-20 text-[10px] font-display tracking-wider" style={{ color: 'var(--tg-text-muted)' }}>TIME</span>
-            <span className="w-32 text-[10px] font-display tracking-wider" style={{ color: 'var(--tg-text-muted)' }}>VEHICLE</span>
-            <span className="w-24 text-[10px] font-display tracking-wider" style={{ color: 'var(--tg-text-muted)' }}>TIRE</span>
-            <span className="w-24 text-[10px] font-display tracking-wider" style={{ color: 'var(--tg-text-muted)' }}>METRIC</span>
-            <span className="flex-1 text-[10px] font-display tracking-wider" style={{ color: 'var(--tg-text-muted)' }}>VALUE</span>
+        {loadError ? (
+          <div className="rounded-lg border px-3 py-2 text-sm" style={{
+            borderColor: 'rgba(var(--tg-critical-rgb), 0.35)',
+            background: 'rgba(var(--tg-critical-rgb), 0.08)',
+            color: 'var(--tg-critical)',
+          }}>
+            {loadError}
           </div>
-
-          {logs.map((log) => (
+        ) : (
+          <div className="space-y-0.5 max-h-[600px] overflow-y-auto font-mono-data text-xs">
             <div
-              key={log.id}
-              className="flex gap-3 py-1.5 px-1 rounded scan-hover transition-colors duration-150"
+              className="sticky top-0 z-10 grid grid-cols-[92px_110px_1fr_120px_110px] gap-3 py-2"
               style={{
-                borderLeft: `2px solid ${
-                  log.status === 'critical' ? 'var(--tg-critical)' :
-                  log.status === 'warning' ? 'var(--tg-warning)' :
-                  'transparent'
-                }`,
+                background: 'var(--tg-card)',
+                borderBottom: '1px solid var(--tg-border)',
               }}
             >
-              <span className="w-20 tabular-nums" style={{ color: 'var(--tg-text-muted)' }}>
-                {log.timestamp}
-              </span>
-              <span className="w-32" style={{ color: 'var(--tg-text-secondary)' }}>
-                {log.vehicle}
-              </span>
-              <span className="w-24" style={{ color: 'var(--tg-text-secondary)' }}>
-                {log.tire}
-              </span>
-              <span className="w-24" style={{ color: 'var(--tg-text-muted)' }}>
-                {log.metric}
-              </span>
-              <span className="flex-1 font-medium" style={{
-                color: log.status === 'critical' ? 'var(--tg-critical)' :
-                       log.status === 'warning' ? 'var(--tg-warning)' :
-                       'var(--tg-text-primary)',
-              }}>
-                {log.value}
-              </span>
+              <span className="text-[10px] font-display tracking-wider" style={{ color: 'var(--tg-text-muted)' }}>TIME</span>
+              <span className="text-[10px] font-display tracking-wider" style={{ color: 'var(--tg-text-muted)' }}>MACHINE</span>
+              <span className="text-[10px] font-display tracking-wider" style={{ color: 'var(--tg-text-muted)' }}>PROFILE</span>
+              <span className="text-[10px] font-display tracking-wider" style={{ color: 'var(--tg-text-muted)' }}>FAULT</span>
+              <span className="text-[10px] font-display tracking-wider" style={{ color: 'var(--tg-text-muted)' }}>RISK</span>
             </div>
-          ))}
-        </div>
+
+            {logs.map((log) => (
+              <div
+                key={log.id}
+                className="grid grid-cols-[92px_110px_1fr_120px_110px] gap-3 rounded px-1 py-1.5 scan-hover transition-colors duration-150"
+                style={{
+                  borderLeft: `2px solid ${
+                    log.status === 'critical'
+                      ? 'var(--tg-critical)'
+                      : log.status === 'warning'
+                        ? 'var(--tg-warning)'
+                        : 'transparent'
+                  }`,
+                }}
+              >
+                <span style={{ color: 'var(--tg-text-muted)' }}>{log.timestamp}</span>
+                <span style={{ color: 'var(--tg-text-secondary)' }}>{log.machine}</span>
+                <span style={{ color: 'var(--tg-text-primary)' }}>{log.profile}</span>
+                <span style={{ color: log.status === 'normal' ? 'var(--tg-text-muted)' : log.status === 'warning' ? 'var(--tg-warning)' : 'var(--tg-critical)' }}>
+                  {log.failureType}
+                </span>
+                <span className="font-medium" style={{
+                  color: log.status === 'critical'
+                    ? 'var(--tg-critical)'
+                    : log.status === 'warning'
+                      ? 'var(--tg-warning)'
+                      : 'var(--tg-text-primary)',
+                }}>
+                  {log.probability}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </DashboardCard>
     </div>
   )
+}
+
+function FeedStat({ label, value, tone }: { label: string; value: string; tone: 'neutral' | 'warning' | 'critical' }) {
+  const color = tone === 'critical'
+    ? 'var(--tg-critical)'
+    : tone === 'warning'
+      ? 'var(--tg-warning)'
+      : 'var(--tg-accent)'
+  const borderColor = tone === 'critical'
+    ? 'rgba(var(--tg-critical-rgb), 0.35)'
+    : tone === 'warning'
+      ? 'rgba(var(--tg-warning-rgb), 0.35)'
+      : 'var(--tg-border)'
+  const background = tone === 'critical'
+    ? 'rgba(var(--tg-critical-rgb), 0.12)'
+    : tone === 'warning'
+      ? 'rgba(var(--tg-warning-rgb), 0.12)'
+      : 'var(--tg-hover-bg)'
+
+  return (
+    <div className="rounded-full border px-3 py-1 text-[11px] font-mono-data" style={{
+      borderColor,
+      background,
+      color,
+    }}>
+      {label}: {value}
+    </div>
+  )
+}
+
+function toLogEntry(machine: MachinePrediction, ageOffset = 0): LogEntry {
+  const now = new Date(Date.now() - ageOffset * 1200)
+  const probability = machine.predictedProb * 100
+  const status: LogEntry['status'] =
+    probability >= 60 || machine.predictedFailure === 1
+      ? 'critical'
+      : probability >= 30
+        ? 'warning'
+        : 'normal'
+
+  return {
+    id: Date.now() + ++ageOffset,
+    timestamp: now.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }),
+    machine: machine.id,
+    profile: `${machine.type} | ${Math.round(machine.rpm)} rpm | ${machine.torque.toFixed(1)} Nm`,
+    failureType: machine.failureType ?? 'HEALTHY',
+    probability: `${probability.toFixed(1)}%`,
+    status,
+  }
 }

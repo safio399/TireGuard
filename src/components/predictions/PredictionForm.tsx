@@ -66,18 +66,20 @@ export default function PredictionForm({
                 {field.label}
               </span>
               <Input
-                type={field.type}
-                inputMode="decimal"
-                step={field.step}
-                min={field.min}
-                value={values[field.key]}
-                onChange={(event) => onChange(field.key, event.target.value)}
-                className={cn(
-                  'h-11 rounded-lg border-border/60 bg-background/60 font-mono-data text-sm shadow-none',
-                  'focus-visible:ring-1 focus-visible:ring-[var(--tg-accent)] focus-visible:ring-offset-0'
-                )}
-                placeholder="0.0"
-              />
+  type={field.type}
+  inputMode="decimal"
+  step={field.step}
+  min={field.min}
+  value={values[field.key]}
+  onChange={(event) => onChange(field.key, event.target.value)}
+  className={cn(
+    'h-11 rounded-lg border border-gray-300 bg-white font-mono-data text-sm shadow-none',
+    'focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0',
+    'placeholder:text-gray-400'
+  )}
+  style={{ color: '#111827' }}
+  placeholder="0.0"
+/>
             </label>
           ))}
 
@@ -94,9 +96,9 @@ export default function PredictionForm({
               )}
             >
               <option value="">Select type</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="H">H</option>
+                <option value="L" style={{ color: '#000000' /* or a high‑contrast color */ }}>L</option>
+                <option value="M" style={{ color: '#000000' /* or a high‑contrast color */ }}>M</option>
+                <option value="H" style={{ color: '#000000' /* or a high‑contrast color */ }}>H</option>
             </select>
           </label>
         </div>
